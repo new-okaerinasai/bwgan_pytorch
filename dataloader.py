@@ -7,6 +7,13 @@ import os
 import random
 random.seed(1234)
 
+class CustomTransform():
+    def __init__(self):
+        pass
+    def __call__(self, image):
+        return (image - 0.5) / 0.5
+
+
 class celeba(data.Dataset):
     """Dataset class for the CelebA dataset."""
 
@@ -84,11 +91,12 @@ def dataloader(name='CelebA', path="data/bwgan", batch_size=128, img_size=64, nu
     '''
     return (train_dataloader, test_dataloader)
     '''
-    
+
     NUM_WORKERS = num_workers
     BATCH_SIZE = batch_size
     img_size = img_size
 
+    # ----------------------------------------------
     if name == 'Cifar':
         path_cifar = path + "/cifar"
         if not os.path.exists(path_cifar):
@@ -96,17 +104,18 @@ def dataloader(name='CelebA', path="data/bwgan", batch_size=128, img_size=64, nu
             
         transform_cifar = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            CustomTransform()
         ])
 
         cifar_set = torchvision.datasets.CIFAR10(root=path_cifar, train=True, download=True, transform=transform_cifar)
         train_loader_cifar = torch.utils.data.DataLoader(cifar_set, batch_size=BATCH_SIZE, shuffle=True, 
-                                                         num_workers=NUM_WORKERS, pin_memory=True)
+                                                         num_workers=NUM_WORKERS, pin_memory=True, drop_last=True)
         cifar_testset = torchvision.datasets.CIFAR10(root=path_cifar, train=False, download=True, transform=transform_cifar)
         test_loader_cifar = torch.utils.data.DataLoader(cifar_testset, batch_size=BATCH_SIZE, shuffle=False, 
-                                                         num_workers=NUM_WORKERS, pin_memory=True)
+                                                         num_workers=NUM_WORKERS, pin_memory=True, drop_last=True)
         return train_loader_cifar, test_loader_cifar
 
+    # ----------------------------------------------
     elif name == 'CelebA':
         load_celeba(path=path)
         path_celeba = path + "/celeba"
@@ -115,13 +124,54 @@ def dataloader(name='CelebA', path="data/bwgan", batch_size=128, img_size=64, nu
             transforms.CenterCrop(178),
             transforms.Resize(img_size),
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            CustomTransform()
         ])
 
         celeba_set = celeba(path_celeba, transform_celeba, mode='train', test_size=2000)
         train_loader_celeba = torch.utils.data.DataLoader(celeba_set, batch_size=BATCH_SIZE, shuffle=True, 
-                                                          num_workers=NUM_WORKERS, pin_memory=True)
+                                                          num_workers=NUM_WORKERS, pin_memory=True, drop_last=True)
         celeba_testset = celeba(path_celeba, transform_celeba, mode='test', test_size=2000)
         test_loader_celeba = torch.utils.data.DataLoader(celeba_testset, batch_size=BATCH_SIZE, shuffle=False, 
-                                                          num_workers=NUM_WORKERS, pin_memory=True)
+                                                          num_workers=NUM_WORKERS, pin_memory=True, drop_last=True)
         return train_loader_celeba, test_loader_celeba
+    elif name == "mnist":
+        transform_mnist = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+        mnist_train = torchvision.datasets.MNIST(path, download=True, train=True,
+                                                transform=transform_mnist)
+        mnist_loader_train = torch.utils.data.DataLoader(mnist_train,
+                                                   batch_size=batch_size,
+                                                   shuffle=True,
+                                                  )
+        mnist_val = torchvision.datasets.MNIST(path, download=True, train=False,
+                                              transform=transform_mnist)
+        mnist_loader_val = torch.utils.data.DataLoader(mnist_val,
+                                                   batch_size=batch_size,
+                                                   shuffle=True,
+                                                  )
+        return mnist_loader_train, mnist_loader_val
+
+
+def show_image(G, nrows, ncols, path="./tmp/",):
+    z = torch.randn((BATCH_SIZE, Z_SIZE)).cuda()
+    ims = G(z)
+    plt.figure(figsize=(10,8))
+    for i in range(nrows*ncols):
+        plt.subplot(nrows, ncols, i + 1)
+        i = np.random.randint(0, BATCH_SIZE)
+        im = ims[i].cpu().detach().numpy()
+        plt.imshow(im.reshape((28, 28)) * 0.5 + 0.5)
+    plt.savefig(path+"res{}.pdf".format(int(START_EXP - time.time())))
+    plt.show()
+
+def get_constants(x_true):
+    transformed_true = sobolev_transform(x_true, C, S)
+    norm = torch.norm(transformed_true.view((BATCH_SIZE, -1)), EXPONENT, keepdim=True, dim=-1)
+    lamb = torch.mean(norm)
+
+    dual_transformed_true = sobolev_transform(x_true, C, -S)
+    dual_norm = torch.norm(transformed_true.view((BATCH_SIZE, -1)), DUAL_EXPONENT, keepdim=True, dim=-1)
+    gamma = torch.mean(dual_norm)
+    return lamb, gamma
+
