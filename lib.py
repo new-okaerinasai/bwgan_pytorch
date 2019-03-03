@@ -1,5 +1,8 @@
 import numpy as np
+import os
+import random
 
+import matplotlib.gridspec as gridspec
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -44,8 +47,9 @@ def flush():
         pickle.dump(dict(_since_beginning), f, pickle.HIGHEST_PROTOCOL)
 
 
-def save_dataset(netG, N=70000, NAME='exp0'):
-    path = '/home/rkhairulin/data/bwgan/dataset-' + NAME
+def save_dataset(netG, N=70000, path_sv='/home/rkhairulin/data/bwgan/dataset-', NAME='exp0'):
+    # generates datast with generator netG
+    path = path_sv + NAME
     iters = N // BATCH_SIZE
     if not os.path.exists(path):
         os.mkdir(path)
@@ -59,3 +63,24 @@ def save_dataset(netG, N=70000, NAME='exp0'):
             #image = np.stack([image, image, image], axis=-1)
             scipy.misc.toimage(image, cmin=0.0, cmax=1.0).save(path + '/out{}.png'.format(k))
             k += 1
+
+def save_to_pdf(path_src, path_sv, name='result.pdf', nrows=7, ncols=7):
+    # draw samples from dataset
+    n = nrows * ncols
+    N = len(os.listdir(path_src))
+    ids = random.sample(range(N), n)
+    
+    plt.figure(figsize=(9,9))
+    gs1 = gridspec.GridSpec(nrows, ncols)
+    gs1.update(wspace=0.05, hspace=0.05) 
+    
+    for i in range(n):
+        ax1 = plt.subplot(gs1[i])
+        image = scipy.misc.imread('{}/out{}.png'.format(path_src, ids[i]))
+        ax1.imshow(image)
+        plt.axis('off')
+        ax1.set_xticklabels([])
+        ax1.set_yticklabels([])
+        ax1.set_aspect('equal')
+    plt.savefig('{}/{}'.format(path_sv, name))
+    plt.show()
