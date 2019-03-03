@@ -47,13 +47,12 @@ def flush():
         pickle.dump(dict(_since_beginning), f, pickle.HIGHEST_PROTOCOL)
 
 
-def save_dataset(netG, N=70000, path_sv='/home/rkhairulin/data/bwgan/dataset-', NAME='exp0'):
+def save_dataset(netG, N=70000, BATCH_SIZE, Z_SIZE, NAME='exp0', path_sv='/home/rkhairulin/data/bwgan/dataset-'):
     # generates datast with generator netG
     path = path_sv + NAME
     iters = N // BATCH_SIZE
     if not os.path.exists(path):
         os.mkdir(path)
-
     k = 0
     for _ in tqdm(range(iters)):
         z = torch.randn((BATCH_SIZE, Z_SIZE)).cuda()
