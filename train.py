@@ -2,6 +2,7 @@ import os, sys
 sys.path.append(os.getcwd())
 
 import time
+import random
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -101,13 +102,14 @@ def sobolev_transform(x, c=5, s=1):
 def show_image(G, nrows, ncols, path="./tmp/",):
     z = torch.randn((BATCH_SIZE, Z_SIZE)).cuda()
     ims = G(z)
+    n = nrows * ncols
+    ids = random.sample(range(BATCH_SIZE), n)
     plt.figure(figsize=(10,8))
-    for i in range(nrows*ncols):
+    for i in range(n):
         plt.subplot(nrows, ncols, i + 1)
-        i = np.random.randint(0, BATCH_SIZE)
-        im = ims[i].cpu().detach().numpy()
+        im = ims[ids[i]].cpu().detach().numpy()
         plt.imshow(im.reshape((28, 28)) * 0.5 + 0.5)
-    plt.savefig(path+"res{}.pdf".format(int(START_EXP - time.time())))
+    plt.savefig(path + "res{}.pdf".format(int(START_EXP - time.time())))
     plt.show()
 
 def get_constants(x_true):
