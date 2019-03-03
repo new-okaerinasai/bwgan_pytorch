@@ -259,4 +259,4 @@ for iteration in range(ITERS):
 # Generate dataset of images to feed them to FID scorer
 
 N = 70000
-save_dataset(netG, N, NAME=NAME)
+save_dataset(netG, N, BATCH_SIZE, Z_SIZE, NAME=NAME)
