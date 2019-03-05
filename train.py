@@ -10,8 +10,8 @@ import torch.optim as optim
 from tensorboardX import SummaryWriter
 import torchvision.utils as vutils
 # from IPython.display import clear_output
-from dataloader import *
-from lib import *
+from dataloader import dataloader
+import lib
 
 sys.path.append(os.getcwd())
 # Adjusted by user
@@ -170,7 +170,7 @@ if use_cuda:
 train_gen, dev_gen = dataloader(DATASET, DATA_PATH, batch_size=BATCH_SIZE, img_size=IMG_SIZE)
 data = inf_train_gen()
 
-print_model_settings(locals().copy(), os.path.join(DATA_PATH, experiment_path, 'vars.txt'))
+;ib.print_model_settings(locals().copy(), os.path.join(DATA_PATH, experiment_path, 'vars.txt'))
 writer = SummaryWriter(log_dir=os.path.join('runs', DATASET, NAME))
 
 for iteration in range(ITERS):
@@ -229,7 +229,7 @@ for iteration in range(ITERS):
     shedulerG.step()
     shedulerD.step()
 
-    print("iteration", iteration)
+    print('iteration ', iteration)
     if iteration % 100 == 99:
         dev_disc_costs = []
         for images, _ in dev_gen:
@@ -255,12 +255,12 @@ for iteration in range(ITERS):
         x = vutils.make_grid(ims[:n], nrow=int(np.sqrt(n)), normalize=True, range=(0, 1))
         writer.add_image('generated_{}_{}'.format(DATASET, NAME), x, iteration)
 
-        # generate_sample(netG, BATCH_SIZE, Z_SIZE)
+        # lib.generate_sample(netG, BATCH_SIZE, Z_SIZE)
         # clear_output()
 
 writer.close()
 # Generate dataset of images to feed them to FID scorer
-save_dataset(netG, BATCH_SIZE, Z_SIZE, IMG_SIZE, DATA_PATH, name=DATASET + '-' + NAME, N=N)
+lib.save_dataset(netG, BATCH_SIZE, Z_SIZE, IMG_SIZE, DATA_PATH, name=DATASET + '-' + NAME, N=N)
 # Save models
 torch.save({'state_dict': netG.state_dict()}, os.path.join(DATA_PATH, experiment_path, 'generator.pth.tar'))
 torch.save({'state_dict': netD.state_dict()}, os.path.join(DATA_PATH, experiment_path, 'discriminator.pth.tar'))
