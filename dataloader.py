@@ -14,12 +14,12 @@ class CustomTransform():
         return (image - 0.5) / 0.5
 
 
-class celeba(data.Dataset):
+class CelebA(data.Dataset):
     """Dataset class for the CelebA dataset."""
 
     def __init__(self, path, transform, mode, test_size=2000):
-        self.images = path + "/images"
-        self.attr_path = path + "/list_attr_celeba.txt"
+        self.images = os.path.join(path, 'images')
+        self.attr_path = os.path.join(path, 'list_attr_celeba.txt')
         self.transform = transform
         self.mode = mode
         self.train_dataset = []
@@ -74,31 +74,31 @@ class celeba(data.Dataset):
     def __len__(self):
         return self.num_images
 
-def load_celeba(path="data/bwgan"):
-    path_celeba = path + "/celeba"
+def load_celeba(path):
+    path_celeba = os.path.join(path, 'celeba')
     if not os.path.exists(path_celeba):
         os.mkdir(path_celeba)
-    if not os.path.exists(path_celeba + "/images"):
-        print("Downloading CelebA to " + path_celeba)
-        os.system("wget https://www.dropbox.com/s/d1kjpkqklf0uw77/celeba.zip?dl=0 -O {}/celeba.zip".format(path))
-        os.system("unzip {}/celeba.zip -d {}/".format(path, path))
-        os.remove("{}/celeba.zip".format(path))
+    if not os.path.exists(os.path.join(path_celeba, 'images')):
+        print('Downloading CelebA to ' + path_celeba)
+        os.system('wget https://www.dropbox.com/s/d1kjpkqklf0uw77/celeba.zip?dl=0 -O {}'.format(os.path.join(path,'celeba.zip')))
+        os.system('unzip {} -d {}/'.format(os.path.join(path,'celeba.zip'), path))
+        os.remove(os.path.join(path,'celeba.zip'))
     else:
-        print("CelebA set already exists in " + path_celeba)
+        print('CelebA set already exists in ' + path_celeba)
 
 
-def dataloader(name='CelebA', path="data/bwgan", batch_size=128, img_size=64, num_workers=8):
-    '''
-    return (train_dataloader, test_dataloader)
-    '''
+def dataloader(name, path, batch_size=128, img_size=32, num_workers=8):
+    """ 
+    Return train_loader, test_loader (torch.utils.data.DataLoader objects)
 
-    NUM_WORKERS = num_workers
-    BATCH_SIZE = batch_size
-    img_size = img_size
-
+    :param name: name of dataset to load (cifar, celeba, mnist)
+    :param path: path to save dataset
+    :param batch_size: how many samples per batch to load
+    :param num_workers: how many subprocesses to use for data loading
+    """
     # ----------------------------------------------
-    if name == 'Cifar':
-        path_cifar = path + "/cifar"
+    if name.lower() == 'cifar':
+        path_cifar = os.path.join(path, 'cifar')
         if not os.path.exists(path_cifar):
             os.mkdir(path_cifar)
             
@@ -108,17 +108,17 @@ def dataloader(name='CelebA', path="data/bwgan", batch_size=128, img_size=64, nu
         ])
 
         cifar_set = torchvision.datasets.CIFAR10(root=path_cifar, train=True, download=True, transform=transform_cifar)
-        train_loader_cifar = torch.utils.data.DataLoader(cifar_set, batch_size=BATCH_SIZE, shuffle=True, 
-                                                         num_workers=NUM_WORKERS, pin_memory=True, drop_last=True)
+        train_loader_cifar = torch.utils.data.DataLoader(cifar_set, batch_size=batch_size, shuffle=True, 
+                                                         num_workers=num_workers, pin_memory=True, drop_last=True)
         cifar_testset = torchvision.datasets.CIFAR10(root=path_cifar, train=False, download=True, transform=transform_cifar)
-        test_loader_cifar = torch.utils.data.DataLoader(cifar_testset, batch_size=BATCH_SIZE, shuffle=False, 
-                                                         num_workers=NUM_WORKERS, pin_memory=True, drop_last=True)
+        test_loader_cifar = torch.utils.data.DataLoader(cifar_testset, batch_size=batch_size, shuffle=False, 
+                                                         num_workers=num_workers, pin_memory=True, drop_last=True)
         return train_loader_cifar, test_loader_cifar
 
     # ----------------------------------------------
-    elif name == 'CelebA':
+    elif name.lower() == 'celeba':
         load_celeba(path=path)
-        path_celeba = path + "/celeba"
+        path_celeba = os.path.join(path, 'celeba')
         
         transform_celeba = transforms.Compose([
             transforms.CenterCrop(178),
@@ -127,28 +127,25 @@ def dataloader(name='CelebA', path="data/bwgan", batch_size=128, img_size=64, nu
             CustomTransform()
         ])
 
-        celeba_set = celeba(path_celeba, transform_celeba, mode='train', test_size=2000)
-        train_loader_celeba = torch.utils.data.DataLoader(celeba_set, batch_size=BATCH_SIZE, shuffle=True, 
-                                                          num_workers=NUM_WORKERS, pin_memory=True, drop_last=True)
-        celeba_testset = celeba(path_celeba, transform_celeba, mode='test', test_size=2000)
-        test_loader_celeba = torch.utils.data.DataLoader(celeba_testset, batch_size=BATCH_SIZE, shuffle=False, 
-                                                          num_workers=NUM_WORKERS, pin_memory=True, drop_last=True)
+        celeba_set = CelebA(path_celeba, transform_celeba, mode='train', test_size=2000)
+        train_loader_celeba = torch.utils.data.DataLoader(celeba_set, batch_size=batch_size, shuffle=True, 
+                                                          num_workers=num_workers, pin_memory=True, drop_last=True)
+        celeba_testset = CelebA(path_celeba, transform_celeba, mode='test', test_size=2000)
+        test_loader_celeba = torch.utils.data.DataLoader(celeba_testset, batch_size=batch_size, shuffle=False, 
+                                                          num_workers=num_workers, pin_memory=True, drop_last=True)
         return train_loader_celeba, test_loader_celeba
-    elif name == "mnist":
+    
+    # ----------------------------------------------
+    elif name.lower() == 'mnist':
+        path = os.path.join(path, 'mnist')
         transform_mnist = transforms.Compose([
             transforms.ToTensor(),
         ])
-        mnist_train = torchvision.datasets.MNIST(path, download=True, train=True,
-                                                transform=transform_mnist)
-        mnist_loader_train = torch.utils.data.DataLoader(mnist_train,
-                                                   batch_size=batch_size,
-                                                   shuffle=True,
-                                                  )
-        mnist_val = torchvision.datasets.MNIST(path, download=True, train=False,
-                                              transform=transform_mnist)
-        mnist_loader_val = torch.utils.data.DataLoader(mnist_val,
-                                                   batch_size=batch_size,
-                                                   shuffle=True,
-                                                  )
-        return mnist_loader_train, mnist_loader_val
-
+        
+        mnist_set = torchvision.datasets.MNIST(path, download=True, train=True, transform=transform_mnist)
+        train_loader_mnist = torch.utils.data.DataLoader(mnist_set, batch_size=batch_size, shuffle=True)
+        
+        mnist_testset = torchvision.datasets.MNIST(path, download=True, train=False, transform=transform_mnist)
+        test_loader_mnist = torch.utils.data.DataLoader(mnist_testset, batch_size=batch_size, shuffle=True)
+        
+        return train_loader_mnist, test_loader_mnist
