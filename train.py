@@ -8,6 +8,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
 from tensorboardX import SummaryWriter
+import torchvision.utils as vutils
 # from IPython.display import clear_output
 from dataloader import *
 from lib import *
