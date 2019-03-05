@@ -1,8 +1,4 @@
-import torch
-import torch.autograd as autograd
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 
 
 class Generator(nn.Module):
@@ -41,6 +37,7 @@ class Generator(nn.Module):
         output = self.sigmoid(output)
         return output.view(-1, self.OUTPUT_DIM)
 
+
 class Discriminator(nn.Module):
     def __init__(self, DIM=64):
         super(Discriminator, self).__init__()
@@ -62,4 +59,3 @@ class Discriminator(nn.Module):
         out = out.view(-1, 4*4*4*self.DIM)
         out = self.output(out)
         return out.view(-1)
-
