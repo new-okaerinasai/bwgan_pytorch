@@ -17,7 +17,7 @@ def print_model_settings(locals_, file_path):
         print("{}: {}".format(var_name, var_value), file=open(file_path, "a"))
 
 
-def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000):
+def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000, use_cuda=False):
     """
     Generate dataset of size N with generator model G and save it
 
@@ -39,7 +39,8 @@ def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000):
         os.mkdir(path)
     k = 0
     for _ in range(iters):
-        z = torch.randn((batch_size, z_size)).cuda()
+        z = torch.randn((batch_size, z_size))
+        z = z.cuda() if use_cuda else z
         images = G(z)
         for i in range(batch_size):
             image = images[i].cpu().detach().numpy().reshape(img_size)
@@ -75,7 +76,7 @@ def show_sample(path_src, nrows=7, ncols=7, path_sv=None, name='sample.png'):
     plt.show()
 
 
-def generate_sample(G, batch_size, z_size, s, nrows=7, ncols=7, path=None, name='sample.png'):
+def generate_sample(G, batch_size, z_size, s, nrows=7, ncols=7, path=None, name='sample.png', use_cuda=False):
     """
     Generate sample with generator model G and show it (save if path specified)
 
@@ -87,7 +88,8 @@ def generate_sample(G, batch_size, z_size, s, nrows=7, ncols=7, path=None, name=
     :param path: path to save
     :param name: filename with specified extension (pdf, png, jpg)
     """
-    z = torch.randn((batch_size, z_size)).cuda()
+    z = torch.randn((batch_size, z_size))
+    z = z.cuda() if use_cuda else z
     images = G(z)
 
     n = nrows * ncols
