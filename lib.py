@@ -1,85 +1,112 @@
-import numpy as np
 import os
 import random
-
-import matplotlib.gridspec as gridspec
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
-import collections
-import time
-import pickle as pickle
-
-from tqdm import tqdm
+import torch
 import scipy
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
-_since_beginning = collections.defaultdict(lambda: {})
-_since_last_flush = collections.defaultdict(lambda: {})
-
-_iter = [0]
-def tick():
-    _iter[0] += 1
-
-def plot(name, value):
-    _since_last_flush[name][_iter[0]] = value
-
-def flush():
-    prints = []
-
-    for name, vals in list(_since_last_flush.items()):
-        prints.append("{}\t{}".format(name, np.mean(list(vals.values()))))
-        _since_beginning[name].update(vals)
-
-        x_vals = np.sort(list(_since_beginning[name].keys()))
-        y_vals = [_since_beginning[name][x] for x in x_vals]
-
-        plt.clf()
-        plt.plot(x_vals, y_vals)
-        plt.xlabel('iteration')
-        plt.ylabel(name)
-        plt.savefig(name.replace(' ', '_')+'.jpg')
-
-    print("iter {}\t{}".format(_iter[0], "\t".join(prints)))
-    _since_last_flush.clear()
-
-    with open('log.pkl', 'wb') as f:
-        pickle.dump(dict(_since_beginning), f, pickle.HIGHEST_PROTOCOL)
+def print_model_settings(locals_, file_path):
+    print("Uppercase local vars:")
+    all_vars = [(k, v) for (k, v) in list(locals_.items()) if (k.isupper() and k != 'T'
+                                                               and k != 'SETTINGS'
+                                                               and k != 'ALL_SETTINGS')]
+    all_vars = sorted(all_vars, key=lambda x: x[0])
+    for var_name, var_value in all_vars:
+        if 'module' in str(var_value): continue
+        print("{}: {}".format(var_name, var_value))
+        print("{}: {}".format(var_name, var_value), file=open(file_path, "a"))
 
 
-def save_dataset(netG, N=70000, BATCH_SIZE, Z_SIZE, NAME='exp0', path_sv='/home/rkhairulin/data/bwgan/dataset-'):
-    # generates datast with generator netG
-    path = path_sv + NAME
-    iters = N // BATCH_SIZE
+def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000):
+    """
+    Generate dataset of size N with generator model G and save it
+
+    :param G: generator model
+    :param batch_size: model parameter
+    :param z_size: model parameter
+    :param s: image size tuple (H, W) or int if H=W
+    :param path: path to save
+    :param name: experiment name to specify folder
+    :param N: number of images to generate
+    """
+
+    if name is not None:
+        path = os.path.join(path, 'dataset-' + name)
+    iters = N // batch_size if N >= batch_size else 1
+    if isinstance(img_size, int):
+        img_size = (img_size, img_size)
     if not os.path.exists(path):
         os.mkdir(path)
     k = 0
-    for _ in tqdm(range(iters)):
-        z = torch.randn((BATCH_SIZE, Z_SIZE)).cuda()
-        ims = netG(z)
-        for i in range(BATCH_SIZE):
-            image = (ims[i].cpu().detach().numpy()).reshape(28,28)
-            #image = np.stack([image, image, image], axis=-1)
-            scipy.misc.toimage(image, cmin=0.0, cmax=1.0).save(path + '/out{}.png'.format(k))
+    for _ in range(iters):
+        z = torch.randn((batch_size, z_size)).cuda()
+        images = G(z)
+        for i in range(batch_size):
+            image = images[i].cpu().detach().numpy().reshape(img_size)
+            scipy.misc.toimage(image, cmin=0.0, cmax=1.0).save(os.path.join(path, 'out{}.png'.format(k)))
             k += 1
 
-def save_to_pdf(path_src, path_sv, name='result.pdf', nrows=7, ncols=7):
-    # draw samples from dataset
+
+def show_sample(path_src, nrows=7, ncols=7, path_sv=None, name='sample.png'):
+    """
+    Show random sample from dataset folder (save if path_cv specified)
+
+    :param paths_src: path to dataset images source
+    :param nrows/ncols: size of grid
+    :param path_sv: path to save sample image
+    :param name: filename with specified extension (pdf, png, jpg)
+    """
     n = nrows * ncols
-    N = len(os.listdir(path_src))
-    ids = random.sample(range(N), n)
-    
-    plt.figure(figsize=(9,9))
+    ids = random.sample(os.listdir(path_src), n)
+
+    plt.figure(figsize=(9, 9))
     gs1 = gridspec.GridSpec(nrows, ncols)
-    gs1.update(wspace=0.05, hspace=0.05) 
-    
+    gs1.update(wspace=0.05, hspace=0.05)
     for i in range(n):
         ax1 = plt.subplot(gs1[i])
-        image = scipy.misc.imread('{}/out{}.png'.format(path_src, ids[i]))
+        image = scipy.misc.imread(os.path.join(path_src, ids[i]))
         ax1.imshow(image)
         plt.axis('off')
         ax1.set_xticklabels([])
         ax1.set_yticklabels([])
         ax1.set_aspect('equal')
-    plt.savefig('{}/{}'.format(path_sv, name))
+    if path_sv is not None:
+        plt.savefig(os.path.join(path_sv, name))
+    plt.show()
+
+
+def generate_sample(G, batch_size, z_size, s, nrows=7, ncols=7, path=None, name='sample.png'):
+    """
+    Generate sample with generator model G and show it (save if path specified)
+
+    :param G: generator model
+    :param batch_size: model parameter
+    :param z_size: model parameter
+    :param s: image size tuple (H, W) or int if H=W
+    :param nrows/ncols: size of grid
+    :param path: path to save
+    :param name: filename with specified extension (pdf, png, jpg)
+    """
+    z = torch.randn((batch_size, z_size)).cuda()
+    images = G(z)
+
+    n = nrows * ncols
+    if isinstance(s, int):
+        s = (s, s)
+    ids = random.sample(range(batch_size), n)
+
+    plt.figure(figsize=(9, 9))
+    gs1 = gridspec.GridSpec(nrows, ncols)
+    gs1.update(wspace=0.05, hspace=0.05)
+
+    for i in range(n):
+        ax1 = plt.subplot(gs1[i])
+        image = images[i].cpu().detach().numpy().reshape(s)
+        ax1.imshow(image)
+        plt.axis('off')
+        ax1.set_xticklabels([])
+        ax1.set_yticklabels([])
+        ax1.set_aspect('equal')
+    if path is not None:
+        plt.savefig(os.path.join(path, name))
     plt.show()
