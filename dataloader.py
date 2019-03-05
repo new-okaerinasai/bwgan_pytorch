@@ -96,7 +96,6 @@ def dataloader(name, path, batch_size=128, img_size=32, num_workers=8):
     :param batch_size: how many samples per batch to load
     :param num_workers: how many subprocesses to use for data loading
     """
-    # ----------------------------------------------
     if name.lower() == 'cifar':
         path_cifar = os.path.join(path, 'cifar')
         if not os.path.exists(path_cifar):
@@ -107,15 +106,9 @@ def dataloader(name, path, batch_size=128, img_size=32, num_workers=8):
             CustomTransform()
         ])
 
-        cifar_set = torchvision.datasets.CIFAR10(root=path_cifar, train=True, download=True, transform=transform_cifar)
-        train_loader_cifar = torch.utils.data.DataLoader(cifar_set, batch_size=batch_size, shuffle=True, 
-                                                         num_workers=num_workers, pin_memory=True, drop_last=True)
-        cifar_testset = torchvision.datasets.CIFAR10(root=path_cifar, train=False, download=True, transform=transform_cifar)
-        test_loader_cifar = torch.utils.data.DataLoader(cifar_testset, batch_size=batch_size, shuffle=False, 
-                                                         num_workers=num_workers, pin_memory=True, drop_last=True)
-        return train_loader_cifar, test_loader_cifar
+        data_set = torchvision.datasets.CIFAR10(root=path_cifar, train=True, download=True, transform=transform_cifar)
+        data_testset = torchvision.datasets.CIFAR10(root=path_cifar, train=False, download=True, transform=transform_cifar)
 
-    # ----------------------------------------------
     elif name.lower() == 'celeba':
         load_celeba(path=path)
         path_celeba = os.path.join(path, 'celeba')
@@ -127,25 +120,21 @@ def dataloader(name, path, batch_size=128, img_size=32, num_workers=8):
             CustomTransform()
         ])
 
-        celeba_set = CelebA(path_celeba, transform_celeba, mode='train', test_size=2000)
-        train_loader_celeba = torch.utils.data.DataLoader(celeba_set, batch_size=batch_size, shuffle=True, 
-                                                          num_workers=num_workers, pin_memory=True, drop_last=True)
-        celeba_testset = CelebA(path_celeba, transform_celeba, mode='test', test_size=2000)
-        test_loader_celeba = torch.utils.data.DataLoader(celeba_testset, batch_size=batch_size, shuffle=False, 
-                                                          num_workers=num_workers, pin_memory=True, drop_last=True)
-        return train_loader_celeba, test_loader_celeba
-    
-    # ----------------------------------------------
+        data_set = CelebA(path_celeba, transform_celeba, mode='train', test_size=2000)
+        data_testset = CelebA(path_celeba, transform_celeba, mode='test', test_size=2000)
+
     elif name.lower() == 'mnist':
         path = os.path.join(path, 'mnist')
         transform_mnist = transforms.Compose([
             transforms.ToTensor(),
         ])
         
-        mnist_set = torchvision.datasets.MNIST(path, download=True, train=True, transform=transform_mnist)
-        train_loader_mnist = torch.utils.data.DataLoader(mnist_set, batch_size=batch_size, shuffle=True)
+        data_set = torchvision.datasets.MNIST(path, download=True, train=True, transform=transform_mnist)
+        data_testset = torchvision.datasets.MNIST(path, download=True, train=False, transform=transform_mnist)
         
-        mnist_testset = torchvision.datasets.MNIST(path, download=True, train=False, transform=transform_mnist)
-        test_loader_mnist = torch.utils.data.DataLoader(mnist_testset, batch_size=batch_size, shuffle=True)
-        
-        return train_loader_mnist, test_loader_mnist
+    train_loader = torch.utils.data.DataLoader(data_set,  batch_size=batch_size, shuffle=True, 
+                                                          num_workers=num_workers, pin_memory=True, drop_last=True)   
+    test_loader = torch.utils.data.DataLoader(data_testset, batch_size=batch_size, shuffle=False, 
+                                                          num_workers=num_workers, pin_memory=True, drop_last=True)
+
+    return train_loader, test_loader
