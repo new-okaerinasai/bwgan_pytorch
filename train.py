@@ -255,12 +255,12 @@ for iteration in range(ITERS):
         x = vutils.make_grid(ims[:n], nrow=int(np.sqrt(n)), normalize=True, range=(0, 1))
         writer.add_image('generated_{}_{}'.format(DATASET, NAME), x, iteration)
 
-        # lib.generate_sample(netG, BATCH_SIZE, Z_SIZE)
+        # lib.generate_sample(netG, BATCH_SIZE, Z_SIZE, use_cuda=use_cuda)
         # clear_output()
 
 writer.close()
 # Generate dataset of images to feed them to FID scorer
-lib.save_dataset(netG, BATCH_SIZE, Z_SIZE, IMG_SIZE, DATA_PATH, name=DATASET + '-' + NAME, N=N)
+lib.save_dataset(netG, BATCH_SIZE, Z_SIZE, IMG_SIZE, DATA_PATH, name=DATASET + '-' + NAME, N=N, use_cuda=use_cuda)
 # Save models
 torch.save({'state_dict': netG.state_dict()}, os.path.join(DATA_PATH, experiment_path, 'generator.pth.tar'))
 torch.save({'state_dict': netD.state_dict()}, os.path.join(DATA_PATH, experiment_path, 'discriminator.pth.tar'))
