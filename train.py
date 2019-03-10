@@ -157,8 +157,8 @@ if DECAY:
 else:
     decay = lambda x: 1
 
-shedulerD = optim.lr_scheduler.LambdaLR(optimizerD, decay)
-shedulerG = optim.lr_scheduler.LambdaLR(optimizerG, decay)
+schedulerD = optim.lr_scheduler.LambdaLR(optimizerD, decay)
+schedulerG = optim.lr_scheduler.LambdaLR(optimizerG, decay)
 
 one = torch.FloatTensor([1])[0]
 mone = one * -1
@@ -170,7 +170,7 @@ if use_cuda:
 train_gen, dev_gen = dataloader(DATASET, DATA_PATH, batch_size=BATCH_SIZE, img_size=IMG_SIZE)
 data = inf_train_gen()
 
-;ib.print_model_settings(locals().copy(), os.path.join(DATA_PATH, experiment_path, 'vars.txt'))
+lib.print_model_settings(locals().copy(), os.path.join(DATA_PATH, experiment_path, 'vars.txt'))
 writer = SummaryWriter(log_dir=os.path.join('runs', DATASET, NAME))
 
 for iteration in range(ITERS):
@@ -226,8 +226,8 @@ for iteration in range(ITERS):
     G_cost = -G
     optimizerG.step()
 
-    shedulerG.step()
-    shedulerD.step()
+    schedulerG.step()
+    schedulerD.step()
 
     print('iteration ', iteration)
     if iteration % 100 == 99:
