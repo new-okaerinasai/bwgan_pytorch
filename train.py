@@ -1,14 +1,14 @@
 import os
 import sys
 sys.path += ['',
- '/mnt/mlhep2018/pythia/lib',
- '/home/rkhairulin/.local/lib/python3.6/site-packages',
- '/mnt/mlhep2018/pyenv/versions/3.6.6/lib/python36.zip',
- '/mnt/mlhep2018/pyenv/versions/3.6.6/lib/python3.6',
- '/mnt/mlhep2018/pyenv/versions/3.6.6/lib/python3.6/lib-dynload',
- '/mnt/mlhep2018/pyenv/versions/3.6.6/envs/mlhep/lib/python3.6/site-packages',
- '/mnt/mlhep2018/pyenv/versions/3.6.6/envs/mlhep/lib/python3.6/site-packages/IPython/extensions',
- '/home/rkhairulin/.ipython']
+ '/opt/conda/anaconda3/lib/python36.zip',
+ '/opt/conda/anaconda3/lib/python3.6',
+ '/opt/conda/anaconda3/lib/python3.6/lib-dynload',
+ '/opt/conda/anaconda3/lib/python3.6/site-packages',
+ '/opt/conda/anaconda3/lib/python3.6/site-packages/Sphinx-1.5.6-py3.6.egg',
+ '/opt/conda/anaconda3/lib/python3.6/site-packages/setuptools-27.2.0-py3.6.egg',
+ '/opt/conda/anaconda3/lib/python3.6/site-packages/IPython/extensions',
+ '/home/ab/.ipython']
 sys.path.append(os.getcwd())
 
 import argparse
@@ -132,12 +132,13 @@ def train():
     train_gen, dev_gen = dataloader(DATASET, DATA_PATH, batch_size=BATCH_SIZE, img_size=IMG_SIZE)
     data = inf_train_gen(train_gen)
 
-    lib.print_model_settings(locals().copy(), os.path.join(DATA_PATH, experiment_path, 'vars.txt'))
+    #lib.print_model_settings(locals().copy(), os.path.join(DATA_PATH, experiment_path, 'vars.txt'))
+    print('Arguments\n', args)
     print('Tensorboard logdir: {}runs/{}/{}'.format(DATA_PATH, DATASET,NAME))
     writer = SummaryWriter(log_dir=os.path.join(DATA_PATH, 'runs', DATASET, NAME))
 
     for iteration in range(ITERS):
-        if iteration % 30000 == 0:
+        if iteration % 10000 == 0:
             print('Iteration {}, see progress on tensorboard'.format(iteration))
         for p in netD.parameters():  # reset requires_grad
             p.requires_grad = True  # they are set to False below in netG update
@@ -208,6 +209,12 @@ def train():
             n = 49 if BATCH_SIZE > 49 else BATCH_SIZE
             x = vutils.make_grid(ims[:n], nrow=int(np.sqrt(n)), normalize=True, range=(0, 1))
             writer.add_image('generated_{}_{}'.format(DATASET, NAME), x, iteration)
+        if iteration % 1000 == 0:
+            print('Iteration {}: saving models to {}{}/'.format(iteration, DATA_PATH, experiment_path))
+            torch.save({'state_dict': netG.state_dict()}, os.path.join(DATA_PATH, 
+                                                                       experiment_path, 'generator_{}.pth.tar'.format(iteration)))
+            torch.save({'state_dict': netD.state_dict()}, os.path.join(DATA_PATH, 
+                                                                       experiment_path, 'discriminator_{}.pth.tar'.format(iteration)))
 
     writer.close()
     # Generate dataset of images to feed them to FID scorer
@@ -215,8 +222,8 @@ def train():
     lib.save_dataset(netG, BATCH_SIZE, Z_SIZE, (CH, IMG_SIZE), DATA_PATH, name=DATASET + '-' + NAME, N=N, device=device)
     # Save models
     print('Saving models to {}{}/'.format(DATA_PATH, experiment_path))
-    torch.save({'state_dict': netG.state_dict()}, os.path.join(DATA_PATH, experiment_path, 'generator.pth.tar'))
-    torch.save({'state_dict': netD.state_dict()}, os.path.join(DATA_PATH, experiment_path, 'discriminator.pth.tar'))
+    torch.save({'state_dict': netG.state_dict()}, os.path.join(DATA_PATH, experiment_path, 'generator_final.pth.tar'))
+    torch.save({'state_dict': netD.state_dict()}, os.path.join(DATA_PATH, experiment_path, 'discriminator_final.pth.tar'))
 
 #####################################################################################
 
@@ -227,7 +234,7 @@ parser.add_argument('--cuda', choices=['0', '1', '2', '3', '-1'], required=True,
 
 parser.add_argument('--s', required=True, type=float)
 parser.add_argument('--p', required=True, type=float)
-parser.add_argument('--c', default=2, type=float)
+parser.add_argument('--c', default=5, type=float)
 parser.add_argument('--batchsize', default=60, type=int)
 
 parser.add_argument('--iters', default=200000, type=int)
@@ -280,11 +287,17 @@ OUTPUT_DIM = int(IMG_SIZE * IMG_SIZE * CH)
 LAMBDA = 10  # Gradient penalty lambda hyperparameter
 BETA = (0., 0.9)  # Betas parameters for optimizer
 
-if not os.path.exists(os.path.join(DATA_PATH, 'tmp')):
-    os.mkdir(os.path.join(DATA_PATH, 'tmp'))
 
 experiment_path = os.path.join('tmp', DATASET + '-' + NAME)
 if not os.path.exists(os.path.join(DATA_PATH, experiment_path)):
-    os.mkdir(os.path.join(DATA_PATH, experiment_path))
+    os.makedirs(os.path.join(DATA_PATH, experiment_path), exist_ok=True)
 
+'''
+if os.path.exists(os.path.join(DATA_PATH, 'runs', DATASET, NAME)):
+    ans = input('You run experimnet with existing name, delete or exit? (d, e)')
+    if ans == 'd':
+        os.system('rm -rf {}'.format(os.path.join(DATA_PATH, 'runs', DATASET, NAME)))
+    elif ans == 'e':
+        sys.exit()
+'''
 train()
