@@ -32,13 +32,14 @@ class ResBlock(nn.Module):
         else:
             self.bn = Identity()
 
+        self.conv0 = nn.Conv2d(self.in_filters, self.out_filters, (1, 1))
         self.conv1 = nn.Conv2d(self.in_filters, self.out_filters, self.kernel_size,
                                padding=self.kernel_size[0]-2)
         self.conv2 = nn.Conv2d(self.out_filters, self.out_filters, self.kernel_size,
                                padding=self.kernel_size[0]-2)
 
     def forward(self, x):
-        skip_connection = self.resample(nn.Conv2d(self.in_filters, self.out_filters, (1, 1))(x))
+        skip_connection = self.resample(self.conv0(x))
         x = self.resample(x)
         x = nn.ReLU()(self.bn(self.conv1(x)))
         x = nn.ReLU()(self.bn(self.conv2(x)))
