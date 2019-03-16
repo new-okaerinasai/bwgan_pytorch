@@ -81,7 +81,7 @@ def load_celeba(path):
     if not os.path.exists(os.path.join(path_celeba, 'images')):
         print('Downloading CelebA to ' + path_celeba)
         os.system('wget https://www.dropbox.com/s/d1kjpkqklf0uw77/celeba.zip?dl=0 -O {}'.format(os.path.join(path,'celeba.zip')))
-        os.system('unzip {} -d {}/'.format(os.path.join(path,'celeba.zip'), path))
+        os.system('unzip -qq {} -d {}/'.format(os.path.join(path,'celeba.zip'), path))
         os.remove(os.path.join(path,'celeba.zip'))
     else:
         print('CelebA set already exists in ' + path_celeba)
