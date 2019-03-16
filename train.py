@@ -109,6 +109,7 @@ def train():
             netG = Generator(DIM, OUTPUT_DIM).to(device)
             netD = Discriminator(DIM).to(device)
         else:
+            print(device)
             netG = Generator().to(device)
             netD = Discriminator().to(device)
     print(netG)
@@ -135,7 +136,9 @@ def train():
     #lib.print_model_settings(locals().copy(), os.path.join(DATA_PATH, experiment_path, 'vars.txt'))
     print('Arguments\n', args)
     print('Tensorboard logdir: {}runs/{}/{}'.format(DATA_PATH, DATASET,NAME))
-    writer = SummaryWriter(log_dir=os.path.join(DATA_PATH, 'runs', DATASET, NAME))
+    log_dir = LOGS_DIR if LOGS_DIR else os.path.join(DATA_PATH, 'runs', DATASET, NAME)
+    print(log_dir)
+    writer = SummaryWriter(log_dir=log_dir)
 
     for iteration in range(ITERS):
         if iteration % 10000 == 0:
@@ -246,6 +249,7 @@ parser.add_argument('--n', default=70000, type=int, help='Number of images to cr
 parser.add_argument('--pretrained', default=False, type=bool, help='Load pretrained model from datapath/tmp/dataset-name/')
 parser.add_argument('--datapath', default='/home/rkhairulin/data/bwgan/', type=str) 
 
+parser.add_argument('--logspath', default=None, type=str)
 args = parser.parse_args()
 
 S = args.s
@@ -265,7 +269,9 @@ DATASET = args.dataset
 DATA_PATH = args.datapath
 pretrained = args.pretrained
 
-if args.cuda != -1:
+LOGS_DIR = args.logspath
+print(args.cuda)
+if int(args.cuda) != -1:
     os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda
     device = 'cuda:0'
 else:
