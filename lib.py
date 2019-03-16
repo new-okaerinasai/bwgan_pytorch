@@ -2,8 +2,8 @@ import os
 import random
 import torch
 import scipy
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+# import matplotlib.pyplot as plt
+# import matplotlib.gridspec as gridspec
 
 def print_model_settings(locals_, file_path=None):
     print("Uppercase local vars:")
@@ -12,7 +12,7 @@ def print_model_settings(locals_, file_path=None):
                                                                and k != 'ALL_SETTINGS')]
     all_vars = sorted(all_vars, key=lambda x: x[0])
     for var_name, var_value in all_vars:
-        if 'module' in str(var_value): continue
+        #if 'module' in str(var_value): continue
         print("{}: {}".format(var_name, var_value))
         if file_path is not None:
             print("{}: {}".format(var_name, var_value), file=open(file_path, "a"))
