@@ -11,11 +11,29 @@ from scipy.misc import imread
 from torch.nn.functional import adaptive_avg_pool2d
 from torchvision import models
 
+from torch.autograd import Variable
+import torch.utils.data
+from torchvision.models.inception import inception_v3
+from scipy.stats import entropy
+from tqdm import tqdm, trange
+
 try:
     from tqdm import tqdm
 except ImportError:
     # If not tqdm is not available, provide a mock version of it
     def tqdm(x): return x
+
+
+class Dataset(torch.utils.data.Dataset):
+    def __init__(self, orig):
+        self.orig = orig
+
+    def __getitem__(self, index):
+        return self.orig[index]
+
+    def __len__(self):
+        return len(self.orig)
+
 
 class InceptionV3(nn.Module):
     """Pretrained InceptionV3 network returning feature maps"""
@@ -301,3 +319,56 @@ def calculate_fid_given_paths(paths, device, dims=2048):
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
     return fid_value
+
+def inception_score(imgs, device='cpu', batch_size=32, resize=False, splits=1):
+    """Computes the inception score of the generated images imgs
+
+    imgs -- Torch dataset of (3xHxW) numpy images normalized in the range [-1, 1]
+    cuda -- whether or not to run on GPU
+    batch_size -- batch size for feeding into Inception v3
+    splits -- number of splits
+    """
+    N = len(imgs)
+
+    assert batch_size > 0
+    assert N > batch_size
+
+    # Set up dtype
+    dtype = torch.FloatTensor
+
+    # Set up dataloader
+    dataloader = torch.utils.data.DataLoader(imgs, batch_size=batch_size)
+
+    # Load inception model
+    inception_model = inception_v3(pretrained=True, transform_input=False).type(dtype).to(device)
+    inception_model.eval();
+    up = nn.Upsample(size=(299, 299), mode='bilinear').type(dtype).to(device)
+    def get_pred(x):
+        if resize:
+            x = up(x)
+        x = inception_model(x)
+        return F.softmax(x).data.cpu().numpy()
+
+    # Get predictions
+    preds = np.zeros((N, 1000))
+    print('Number of batches: ', N//batch_size)
+    for i, batch in tqdm(enumerate(dataloader, 0)):
+        batch = batch.type(dtype).to(device)
+        batchv = Variable(batch)
+        batch_size_i = batch.size()[0]
+
+        preds[i*batch_size:i*batch_size + batch_size_i] = get_pred(batchv)
+
+    # Now compute the mean kl-div
+    split_scores = []
+    print('Computing the mean kl-div...')
+    for k in trange(splits):
+        part = preds[k * (N // splits): (k+1) * (N // splits), :]
+        py = np.mean(part, axis=0)
+        scores = []
+        for i in range(part.shape[0]):
+            pyx = part[i, :]
+            scores.append(entropy(pyx, py))
+        split_scores.append(np.exp(np.mean(scores)))
+
+    return np.mean(split_scores), np.std(split_scores)
