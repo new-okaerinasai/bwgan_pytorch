@@ -269,14 +269,23 @@ def calculate_activation_statistics(files, dims=2048, device='cpu'):
 
 
 def _compute_statistics_of_path(path, dims, device):
-    if path.endswith('.npz'):
-        f = np.load(path)
+    path_ = path
+    if not path_.endswith('.npz'):
+        if 'statistic.npz' in os.listdir(path):
+            a = input('There is computed statistic file in {}, you want to recalculate? (yes/no) '.format(path))
+            if a == 'no':
+                path_ = os.path.join(path, 'statistic.npz')
+    if path_.endswith('.npz'):
+        print('Loading precomputed statistic...')
+        f = np.load(path_)
         m, s = f['mu'][:], f['sigma'][:]
         f.close()
     else:
-        path = pathlib.Path(path)
-        files = list(path.glob('*.jpg')) + list(path.glob('*.png'))
+        path_ = pathlib.Path(path_)
+        files = list(path_.glob('*.jpg')) + list(path_.glob('*.png'))
+        print('Computing statistic of generated dataset...')
         m, s = calculate_activation_statistics(files, dims, device)
+        np.savez(os.path.join(path_, 'statistic.npz'), mu=m, sigma=s)
 
     return m, s
 
@@ -286,7 +295,6 @@ def calculate_fid_given_paths(paths, device, dims=2048):
     for p in paths:
         if not os.path.exists(p):
             raise RuntimeError('Invalid path: %s' % p)
-    print('Computing statistic of generated dataset...')
     m1, s1 = _compute_statistics_of_path(paths[0], dims, device)
     m2, s2 = _compute_statistics_of_path(paths[1], dims, device)
     print('Computing FID...')
