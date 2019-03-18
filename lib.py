@@ -44,7 +44,7 @@ def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000, devi
         images = G(z)
         for i in range(batch_size):
             image = images[i].cpu().detach().numpy().reshape(img_size).transpose((1, 2, 0))
-            scipy.misc.toimage(image, cmin=0.0, cmax=1.0).save(os.path.join(path, 'out{}.png'.format(k)))
+            scipy.misc.toimage(0.5 * image + 0.5, cmin=0.0, cmax=1.0).save(os.path.join(path, 'out{}.png'.format(k)))
             k += 1
 
 
@@ -103,7 +103,7 @@ def generate_sample(G, batch_size, z_size, img_size, nrows=7, ncols=7, path=None
     for i in range(n):
         ax1 = plt.subplot(gs1[i])
         image = images[i].cpu().detach().numpy().reshape(img_size).transpose((1, 2, 0))
-        ax1.imshow(image)
+        ax1.imshow(0.5 * image + 0.5)
         plt.axis('off')
         ax1.set_xticklabels([])
         ax1.set_yticklabels([])
