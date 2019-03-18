@@ -2,21 +2,10 @@ import os
 import random
 import torch
 import scipy
-# import matplotlib.pyplot as plt
-# import matplotlib.gridspec as gridspec
-
-def print_model_settings(locals_, file_path=None):
-    print("Uppercase local vars:")
-    all_vars = [(k, v) for (k, v) in list(locals_.items()) if (k.isupper() and k != 'T'
-                                                               and k != 'SETTINGS'
-                                                               and k != 'ALL_SETTINGS')]
-    all_vars = sorted(all_vars, key=lambda x: x[0])
-    for var_name, var_value in all_vars:
-        #if 'module' in str(var_value): continue
-        print("{}: {}".format(var_name, var_value))
-        if file_path is not None:
-            print("{}: {}".format(var_name, var_value), file=open(file_path, "a"))
-
+import scipy.misc
+#import matplotlib.pyplot as plt
+#import matplotlib.gridspec as gridspec
+import tqdm
 
 def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000, device='cpu'):
     """
@@ -37,9 +26,9 @@ def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000, devi
     if len(img_size) == 2:
         img_size = (img_size[0], img_size[1], img_size[1])
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.makedirs(path, exist_ok=True)
     k = 0
-    for _ in range(iters):
+    for _ in tqdm.trange(iters):
         z = torch.randn((batch_size, z_size)).to(device)
         images = G(z)
         for i in range(batch_size):
