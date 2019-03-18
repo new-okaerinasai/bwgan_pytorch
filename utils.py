@@ -301,7 +301,6 @@ def _compute_statistics_of_path(path, dims, device):
     else:
         path_ = pathlib.Path(path_)
         files = list(path_.glob('*.jpg')) + list(path_.glob('*.png'))
-        print('Computing statistic of generated dataset...')
         m, s = calculate_activation_statistics(files, dims, device)
         np.savez(os.path.join(path_, 'statistic.npz'), mu=m, sigma=s)
 
