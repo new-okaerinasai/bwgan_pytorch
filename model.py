@@ -54,15 +54,12 @@ class Generator(nn.Module):
         self.resblock1 = ResBlock(in_filters=128, out_filters=128, kind="up", normalize=True)
         self.resblock2 = ResBlock(in_filters=128, out_filters=128, kind="up", normalize=True)
         self.resblock3 = ResBlock(in_filters=128, out_filters=128, kind="up", normalize=True)
-
+        self.main = nn.Sequential(self.resblock1, self.resblock2, self.resblock3)
         self.conv = nn.Conv2d(128, 3, kernel_size=(1, 1))
 
     def forward(self, z):
         x = self.fc(z).view((-1, 128, 4, 4))
-        x = self.resblock1(x)
-        x = self.resblock2(x)
-        x = self.resblock3(x)
-
+        x = self.main(x)
         x = nn.Tanh()(self.conv(x))
 
         return x
@@ -76,15 +73,11 @@ class Discriminator(nn.Module):
         self.resblock2 = ResBlock(in_filters=out_filters, out_filters=out_filters, kind="down")
         self.resblock3 = ResBlock(in_filters=out_filters, out_filters=out_filters, kind=None)
         self.resblock4 = ResBlock(in_filters=out_filters, out_filters=out_filters, kind=None)
-
+        self.main = nn.Sequential(self.resblock1, self.resblock2, self.resblock3, self.resblock4)
         self.fc = nn.Linear(128, 1)
 
     def forward(self, x):
-        x = self.resblock1(x)
-        x = self.resblock2(x)
-        x = self.resblock3(x)
-        x = self.resblock4(x)
-
+        x = self.main(x)
         x = nn.AvgPool2d([x.shape[-1], x.shape[-2]])(x).view((-1, 128))
         x = self.fc(x)
 
