@@ -2,6 +2,8 @@
 
 Unofficial Pytorch implementation of Banach WGAN https://arxiv.org/pdf/1806.06621.pdf
 
+[Our report](https://clck.ru/FPJWN)
+
 Training (following arguments are required, see ```python train.py -h``` for further information):
 ```
 python train.py --dataset DATASET --name EXPERIMENT --cuda ID --s S --p P
