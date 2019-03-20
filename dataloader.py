@@ -1,11 +1,13 @@
-import torchvision
-from torch.utils import data
-import torchvision.transforms as transforms
-from PIL import Image
-import torch
 import os
 import random
+
+import torchvision
+import torch
+import torchvision.transforms as transforms
+from torch.utils import data
+from PIL import Image
 random.seed(1234)
+
 
 class CustomTransform():
     def __init__(self):
@@ -22,20 +24,17 @@ class CelebA(data.Dataset):
         self.attr_path = os.path.join(path, 'list_attr_celeba.txt')
         self.transform = transform
         self.mode = mode
-        self.train_dataset = []
-        self.test_dataset = []
+        self.dataset = []
         self.a2id = {}
         self.id2a = {}
         self.test_size = test_size
         self.preprocess()
 
-        if mode == 'train':
-            self.num_images = len(self.train_dataset)
-        else:
-            self.num_images = len(self.test_dataset)
-
+        self.num_images = len(self.dataset)
+        
     def preprocess(self):
-        lines = [line.rstrip() for line in open(self.attr_path, 'r')]
+        with open(self.attr_path, 'r') as f:
+            lines = [line.rstrip() for line in f]
         self.num_files = int(lines[0])
         all_attr_names = lines[1].split()
         self.attrs = all_attr_names
@@ -44,11 +43,11 @@ class CelebA(data.Dataset):
             self.id2a[i] = attr_name
 
         lines = lines[2:]
-        random.shuffle(lines)
         if isinstance(self.test_size, float):
             self.test_size = int(self.num_files * self.test_size)
+        lines = lines[:-self.test_size] if self.mode == 'train' else lines[-self.test_size:]
 
-        for i, line in enumerate(lines):
+        for line in lines:
             split = line.split()
             filename = split[0]
             values = split[1:]
@@ -56,18 +55,13 @@ class CelebA(data.Dataset):
             for attr_name in self.attrs:
                 idx = self.a2id[attr_name]
                 label.append(values[idx] == '1')
-
-            if (i + 1) < self.test_size:
-                self.test_dataset.append([filename, label])
-            else:
-                self.train_dataset.append([filename, label])
-
+            self.dataset.append([filename, label])
+            
         print('Finished preprocessing the CelebA dataset...')
 
     def __getitem__(self, index):
         """Return one image and its corresponding attribute label."""
-        dataset = self.train_dataset if self.mode == 'train' else self.test_dataset
-        filename, label = dataset[index]
+        filename, label = self.dataset[index]
         image = Image.open(os.path.join(self.images, filename))
         return self.transform(image), torch.FloatTensor(label)
 
@@ -76,8 +70,7 @@ class CelebA(data.Dataset):
 
 def load_celeba(path):
     path_celeba = os.path.join(path, 'celeba')
-    if not os.path.exists(path_celeba):
-        os.mkdir(path_celeba)
+    os.makedirs(path_celeba, exist_ok=True)
     if not os.path.exists(os.path.join(path_celeba, 'images')):
         print('Downloading CelebA to ' + path_celeba)
         os.system('wget https://www.dropbox.com/s/d1kjpkqklf0uw77/celeba.zip?dl=0 -O {}'.format(os.path.join(path,'celeba.zip')))
@@ -98,8 +91,7 @@ def dataloader(name, path, batch_size=128, img_size=32, num_workers=8):
     """
     if name.lower() == 'cifar':
         path_cifar = os.path.join(path, 'cifar')
-        if not os.path.exists(path_cifar):
-            os.mkdir(path_cifar)
+        os.makedirs(path_cifar, exist_ok=True)
             
         transform_cifar = transforms.Compose([
             transforms.ToTensor(),
