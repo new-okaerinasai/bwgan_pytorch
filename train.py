@@ -2,21 +2,20 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-import argparse
 import time
 import random
+import argparse
+
 import numpy as np
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.optim as optim
-from tensorboardX import SummaryWriter
 import torchvision.utils as vutils
+from tensorboardX import SummaryWriter
 from dataloader import dataloader
-import lib
-import warnings
-warnings.filterwarnings('ignore')
 
+import lib
 
 
 def sobolev_transform(x, c=5, s=1):
@@ -260,9 +259,9 @@ DATASET = args.dataset
 DATA_PATH = args.datapath
 pretrained = args.pretrained
 
-LOGS_DIR = args.logspath
-print(args.cuda)
-if int(args.cuda) != -1:
+LOGS_DIR = args.logspath if args.logspath else os.path.join(DATA_PATH, 'runs', DATASET, NAME)
+
+if int(args.cuda) != '-1':
     os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda
     device = 'cuda:0'
 else:
@@ -284,16 +283,16 @@ OUTPUT_DIM = int(IMG_SIZE * IMG_SIZE * CH)
 LAMBDA = 10  # Gradient penalty lambda hyperparameter
 BETA = (0., 0.9)  # Betas parameters for optimizer
 
-
 experiment_path = os.path.join('tmp', DATASET + '-' + NAME)
 os.system("mkdir -p {}".format(os.path.join(DATA_PATH, experiment_path)))
 
-'''
 if os.path.exists(os.path.join(DATA_PATH, 'runs', DATASET, NAME)):
-    ans = input('You run experimnet with existing name, delete or exit? (d, e)')
+    ans = input('You run experiment with existing name, delete logs or exit? (d / e)')
+    while ans not in ('d', 'e'):
+        ans = input('Incorrect input, delete or exit? (d / e)')
     if ans == 'd':
-        os.system('rm -rf {}'.format(os.path.join(DATA_PATH, 'runs', DATASET, NAME)))
+        os.system('rm -rf {}'.format(LOGS_DIR))
     elif ans == 'e':
         sys.exit()
-'''
+
 train()
