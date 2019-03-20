@@ -1,14 +1,5 @@
 import os
 import sys
-sys.path += ['',
- '/opt/conda/anaconda3/lib/python36.zip',
- '/opt/conda/anaconda3/lib/python3.6',
- '/opt/conda/anaconda3/lib/python3.6/lib-dynload',
- '/opt/conda/anaconda3/lib/python3.6/site-packages',
- '/opt/conda/anaconda3/lib/python3.6/site-packages/Sphinx-1.5.6-py3.6.egg',
- '/opt/conda/anaconda3/lib/python3.6/site-packages/setuptools-27.2.0-py3.6.egg',
- '/opt/conda/anaconda3/lib/python3.6/site-packages/IPython/extensions',
- '/home/ab/.ipython']
 sys.path.append(os.getcwd())
 
 import argparse
@@ -295,8 +286,7 @@ BETA = (0., 0.9)  # Betas parameters for optimizer
 
 
 experiment_path = os.path.join('tmp', DATASET + '-' + NAME)
-if not os.path.exists(os.path.join(DATA_PATH, experiment_path)):
-    os.makedirs(os.path.join(DATA_PATH, experiment_path), exist_ok=True)
+os.system("mkdir -p {}".format(os.path.join(DATA_PATH, experiment_path)))
 
 '''
 if os.path.exists(os.path.join(DATA_PATH, 'runs', DATASET, NAME)):
