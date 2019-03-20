@@ -2,26 +2,20 @@
 
 import os
 import pathlib
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from scipy import linalg
-from scipy.misc import imread
+from torch.autograd import Variable
+from torchvision.models.inception import inception_v3
 from torch.nn.functional import adaptive_avg_pool2d
 from torchvision import models
-
-from torch.autograd import Variable
-import torch.utils.data
-from torchvision.models.inception import inception_v3
+from scipy import linalg
+from scipy.misc import imread
 from scipy.stats import entropy
 from tqdm import tqdm, trange
 
-try:
-    from tqdm import tqdm
-except ImportError:
-    # If not tqdm is not available, provide a mock version of it
-    def tqdm(x): return x
 
 class InceptionV3(nn.Module):
     """Pretrained InceptionV3 network returning feature maps"""
@@ -177,7 +171,7 @@ def get_activations(files, dims=2048, device='cpu'):
 
     pred_arr = np.empty((n_used_imgs, dims))
 
-    for i in tqdm(range(n_batches)):
+    for i in trange(n_batches):
         start = i * 50
         end = start + 50
 
@@ -275,22 +269,21 @@ def calculate_activation_statistics(files, dims=2048, device='cpu'):
 
 
 def _compute_statistics_of_path(path, dims, device):
-    path_ = path
-    if not path_.endswith('.npz'):
+    if not path.endswith('.npz'):
         if 'statistic.npz' in os.listdir(path):
-            a = input('There is computed statistic file in {}, you want to recalculate? (yes/no) '.format(path))
+            a = input('There is computed statistic file in {}, do you want to recalculate? (yes/no) '.format(path))
             if a == 'no':
-                path_ = os.path.join(path, 'statistic.npz')
-    if path_.endswith('.npz'):
+                path = os.path.join(path, 'statistic.npz')
+    if path.endswith('.npz'):
         print('Loading precomputed statistic...')
-        f = np.load(path_)
+        f = np.load(path)
         m, s = f['mu'][:], f['sigma'][:]
         f.close()
     else:
-        path_ = pathlib.Path(path_)
-        files = list(path_.glob('*.jpg')) + list(path_.glob('*.png'))
+        path_ = pathlib.Path(path)
+        files = list(path.glob('*.jpg')) + list(path_.glob('*.png'))
         m, s = calculate_activation_statistics(files, dims, device)
-        np.savez(os.path.join(path_, 'statistic.npz'), mu=m, sigma=s)
+        np.savez(os.path.join(path, 'statistic.npz'), mu=m, sigma=s)
 
     return m, s
 
@@ -306,6 +299,7 @@ def calculate_fid_given_paths(paths, device, dims=2048):
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
     return fid_value
+
 
 def inception_score(imgs, device='cpu', batch_size=32, resize=False, splits=1):
     """Computes the inception score of the generated images imgs
@@ -343,7 +337,6 @@ def inception_score(imgs, device='cpu', batch_size=32, resize=False, splits=1):
         batch = batch.type(dtype).to(device)
         batchv = Variable(batch)
         batch_size_i = batch.size()[0]
-
         preds[i*batch_size:i*batch_size + batch_size_i] = get_pred(batchv)
 
     # Now compute the mean kl-div
