@@ -23,18 +23,6 @@ except ImportError:
     # If not tqdm is not available, provide a mock version of it
     def tqdm(x): return x
 
-
-class Dataset(torch.utils.data.Dataset):
-    def __init__(self, orig):
-        self.orig = orig
-
-    def __getitem__(self, index):
-        return self.orig[index]
-
-    def __len__(self):
-        return len(self.orig)
-
-
 class InceptionV3(nn.Module):
     """Pretrained InceptionV3 network returning feature maps"""
 
