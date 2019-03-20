@@ -1,11 +1,13 @@
 import os
 import random
+
 import torch
 import scipy
 import scipy.misc
-#import matplotlib.pyplot as plt
-#import matplotlib.gridspec as gridspec
-import tqdm
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from tqdm import trange
+
 
 def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000, device='cpu'):
     """
@@ -25,16 +27,13 @@ def save_dataset(G, batch_size, z_size, img_size, path, name=None, N=70000, devi
     iters = N // batch_size if N >= batch_size else 1
     if len(img_size) == 2:
         img_size = (img_size[0], img_size[1], img_size[1])
-    if not os.path.exists(path):
-        os.makedirs(path, exist_ok=True)
-    k = 0
-    for _ in tqdm.trange(iters):
+    os.makedirs(path, exist_ok=True)
+    for k in tqdm.trange(iters):
         z = torch.randn((batch_size, z_size)).to(device)
         images = G(z)
         for i in range(batch_size):
             image = images[i].cpu().detach().numpy().reshape(img_size).transpose((1, 2, 0))
-            scipy.misc.toimage(0.5 * image + 0.5, cmin=0.0, cmax=1.0).save(os.path.join(path, 'out{}.png'.format(k)))
-            k += 1
+            scipy.misc.toimage(0.5 * image + 0.5, cmin=0.0, cmax=1.0).save(os.path.join(path, 'out{}.png'.format(k * batch_size + i)))
 
 
 def show_sample(path_src, nrows=7, ncols=7, path_sv=None, name='sample.png'):
