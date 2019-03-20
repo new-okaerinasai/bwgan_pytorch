@@ -1,12 +1,12 @@
 import os
 import argparse
+
 import torch
 import numpy as np
+
 import utils
 import lib
 from model import Generator
-import warnings
-warnings.filterwarnings('ignore')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--original', required=True, help='Path to the original dataset. ')
@@ -24,7 +24,7 @@ N = args.n
 dims = args.dims
 path_original = args.original
 path_generated = args.generated
-if args.cuda != -1:
+if args.cuda != '-1':
     os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda
     device = 'cuda:0'
 else:
@@ -40,7 +40,6 @@ if len(os.listdir(path_generated)) == 0:
     else:
         raise ValueError('Path generated data is empty, pass "models" argument or correct path')
 
-
 if 'statistic.npz' not in os.listdir(path_original):
     print('Computing statistics of original dataset...')
     m_celeba, s_celeba = utils._compute_statistics_of_path(path_original, dims, device)
@@ -48,6 +47,5 @@ if 'statistic.npz' not in os.listdir(path_original):
 
 fid_score = utils.calculate_fid_given_paths([path_generated, os.path.join(path_original, 'statistic.npz')], device, dims)
 print('FID score = ', fid_score)
-result = open(os.path.join(path_generated, 'fid.txt'), 'w')
-result.write('FID_score: {}'.format(fid_score))
-result.close()
+with open(os.path.join(path_generated, 'fid.txt'), 'w') as f:
+    f.write('FID_score: {}'.format(fid_score))
