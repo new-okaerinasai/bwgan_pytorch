@@ -9,7 +9,7 @@ from PIL import Image
 random.seed(1234)
 
 
-class CustomTransform():
+class NormalizeTransform():
     def __init__(self):
         pass
     def __call__(self, image):
@@ -95,7 +95,7 @@ def dataloader(name, path, batch_size=128, img_size=32, num_workers=8):
             
         transform_cifar = transforms.Compose([
             transforms.ToTensor(),
-            CustomTransform()
+            NormalizeTransform()
         ])
 
         data_set = torchvision.datasets.CIFAR10(root=path_cifar, train=True, download=True, transform=transform_cifar)
@@ -109,7 +109,7 @@ def dataloader(name, path, batch_size=128, img_size=32, num_workers=8):
             transforms.CenterCrop(178),
             transforms.Resize(img_size),
             transforms.ToTensor(),
-            CustomTransform()
+            NormalizeTransform()
         ])
 
         data_set = CelebA(path_celeba, transform_celeba, mode='train', test_size=2000)
