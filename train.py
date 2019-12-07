@@ -10,8 +10,9 @@ import torch.autograd as autograd
 import torch.optim as optim
 import torchvision.utils as vutils
 from tensorboardX import SummaryWriter
-from dataloader import dataloader
+import tqdm
 
+from dataloader import dataloader
 import lib
 
 
@@ -88,6 +89,11 @@ def calc_gradient_penalty(D, real_data, fake_data, gamma, lamb, args):
 
 
 def train(args):
+    if args.verbose:
+        range_type = tqdm.trange
+    else:
+        range_type = range
+
     if args.pretrained:
         netG = Generator().to(args.device)
         netG.load_state_dict(
@@ -131,7 +137,7 @@ def train(args):
     print(log_dir)
     writer = SummaryWriter(log_dir=log_dir)
 
-    for iteration in range(args.iters):
+    for iteration in range_type(args.iters):
         if iteration % 10000 == 0:
             print('Iteration {}, see progress on tensorboard'.format(iteration))
         for p in netD.parameters():  # reset requires_grad
@@ -233,6 +239,7 @@ def train(args):
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--dataset', choices=['mnist', 'cifar', 'celeba'], required=True)
     parser.add_argument('--name', required=True)
     parser.add_argument('--cuda', choices=['0', '1', '2', '3', '-1'], required=True, help='-1 is for cpu mode')
