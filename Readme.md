@@ -18,5 +18,5 @@ python inception.py --path PATH_TO_DATASET --cuda ID
 ```
 
 Requirements:
- * Pytorch==0.4.1
+ * Pytorch>= 1.0.0
  * Latest CUDA GPU for acceleration
