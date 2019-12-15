@@ -202,7 +202,7 @@ def train():
             n = 49 if BATCH_SIZE > 49 else BATCH_SIZE
             x = vutils.make_grid(ims[:n], nrow=int(np.sqrt(n)), normalize=True, range=(0, 1))
             writer.add_image('generated_{}_{}'.format(DATASET, NAME), x, iteration)
-        if iteration % 1000 == 0:
+        if iteration % 50000 == 0:
             print('Iteration {}: saving models to {}{}/'.format(iteration, DATA_PATH, experiment_path))
             torch.save({'state_dict': netG.state_dict()}, os.path.join(DATA_PATH, 
                                                                        experiment_path, 'generator_{}.pth.tar'.format(iteration)))
